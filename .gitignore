@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+
+# Environment
+.env
+
+# Runtime data
+uploads/
+*.log
+
+# TypeScript incremental build
+*.tsbuildinfo
+vite.config.d.ts
+vite.config.js
+
+# Editor
+.vscode/
+.idea/

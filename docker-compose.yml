@@ -1,0 +1,117 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rag_backend
+    ports:
+      - "4001:4000"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
+    env_file: .env
+    networks:
+      - ragnet
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rag_frontend
+    ports:
+      - "3002:3000"
+    depends_on:
+      - backend
+    networks:
+      - ragnet
+    restart: unless-stopped
+
+  mariadb:
+    image: mariadb:11
+    container_name: rag_mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MARIADB_DATABASE}
+      MYSQL_USER: ${MARIADB_USER}
+      MYSQL_PASSWORD: ${MARIADB_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ragnet
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:3.6
+    container_name: rag_mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - ragnet
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: rag_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - ragnet
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: rag_qdrant
+    ports:
+      - "6335:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - ragnet
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: rag_n8n
+    ports:
+      - "5680:5678"
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_USER}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - ragnet
+    restart: unless-stopped
+
+networks:
+  ragnet:
+    driver: bridge
+
+volumes:
+  uploads:
+  mariadb_data:
+  mongo_data:
+  redis_data:
+  qdrant_data:
+  n8n_data:
