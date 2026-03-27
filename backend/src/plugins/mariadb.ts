@@ -2,6 +2,7 @@ import mysql from 'mysql2/promise';
 import { config } from '../config';
 
 let pool: mysql.Pool;
+const BOOTSTRAP_ADMIN_EMAIL = 'enguillem@gmail.com';
 
 export function getDb(): mysql.Pool {
   if (!pool) {
@@ -23,5 +24,7 @@ export function getDb(): mysql.Pool {
 export async function initDb(): Promise<void> {
   const db = getDb();
   await db.query('SELECT 1');
+  await db.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30) NULL AFTER name');
+  await db.query("UPDATE users SET role = 'admin' WHERE LOWER(email) = ?", [BOOTSTRAP_ADMIN_EMAIL]);
   console.log('[MariaDB] Connected');
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Settings as SettingsIcon } from 'lucide-react';
+import { LogOut, Settings as SettingsIcon, Users as UsersIcon } from 'lucide-react';
 import { api } from '../api/client';
 import { Document } from '../types';
 import { UploadZone } from '../components/Documents/UploadZone';
@@ -58,6 +58,12 @@ export function Dashboard() {
           <p>{user?.name}</p>
         </div>
         <div className="topbar-actions">
+          {user?.role === 'admin' ? (
+            <Link className="ghost-button" to="/users">
+              <UsersIcon size={16} />
+              Usuarios
+            </Link>
+          ) : null}
           <Link className="ghost-button" to="/settings">
             <SettingsIcon size={16} />
             Ajustes

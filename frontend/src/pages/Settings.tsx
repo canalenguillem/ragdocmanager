@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
-import { ApiKey, UserSettings, AvailableModels, EmbeddingProvider } from '../types';
+import { ApiKey, UserSettings, AvailableModels, EmbeddingProvider, User } from '../types';
+import { useAuthStore } from '../store/auth.store';
 
-type Tab = 'keys' | 'preferences';
+type Tab = 'profile' | 'keys' | 'preferences';
 
 export function Settings() {
   const visibleProviders: EmbeddingProvider[] = ['openai'];
-  const [tab, setTab] = useState<Tab>('keys');
+  const [tab, setTab] = useState<Tab>('profile');
+  const [profile, setProfile] = useState<User | null>(null);
+  const [profilePassword, setProfilePassword] = useState({ current: '', next: '' });
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [availableModels, setAvailableModels] = useState<AvailableModels | null>(null);
@@ -18,6 +21,7 @@ export function Settings() {
   const [newKeyType, setNewKeyType] = useState<'embedding' | 'chat' | 'both'>('both');
   const [newApiKey, setNewApiKey] = useState('');
   const [saving, setSaving] = useState(false);
+  const storedUser = useAuthStore((state) => state.user);
 
   useEffect(() => {
     void loadSettings();
@@ -27,9 +31,11 @@ export function Settings() {
     setLoading(true);
     try {
       const { data } = await api.get('/settings');
+      const me = await api.get<User>('/auth/me');
       setApiKeys(data.api_keys);
       setSettings(data.settings);
       setAvailableModels(data.available_models);
+      setProfile(me.data);
     } catch {
       setError('Error cargando configuración');
     } finally {
@@ -110,6 +116,38 @@ export function Settings() {
     }
   }
 
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!profile) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setSuccess('');
+    try {
+      const { data } = await api.patch('/auth/me', {
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone ?? null,
+        current_password: profilePassword.current || undefined,
+        new_password: profilePassword.next || undefined
+      });
+      localStorage.setItem('rag_token', data.token);
+      useAuthStore.setState({ user: data.user, token: data.token });
+      setProfile(data.user);
+      setProfilePassword({ current: '', next: '' });
+      setSuccess('✓ Perfil actualizado correctamente.');
+    } catch (err: unknown) {
+      const message = typeof err === 'object' && err !== null && 'response' in err
+        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+        : undefined;
+      setError(message ?? 'Error guardando el perfil');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) return <div style={{ color: 'var(--text-secondary)', padding: 32 }}>Cargando...</div>;
 
   return (
@@ -132,7 +170,7 @@ export function Settings() {
         </Link>
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '1px solid var(--border)' }}>
-        {(['keys', 'preferences'] as Tab[]).map((t) => (
+        {(['profile', 'keys', 'preferences'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -146,13 +184,75 @@ export function Settings() {
               fontWeight: tab === t ? 600 : 400
             }}
           >
-            {t === 'keys' ? '🔑 API Keys' : '🤖 Preferencias IA'}
+            {t === 'profile' ? '👤 Perfil' : t === 'keys' ? '🔑 API Keys' : '🤖 Preferencias IA'}
           </button>
         ))}
       </div>
 
       {error ? <div style={{ background: '#ef444422', border: '1px solid var(--error)', borderRadius: 6, padding: '10px 14px', marginBottom: 16, color: 'var(--error)' }}>{error}</div> : null}
       {success ? <div style={{ background: '#22c55e22', border: '1px solid var(--success)', borderRadius: 6, padding: '10px 14px', marginBottom: 16, color: 'var(--success)' }}>{success}</div> : null}
+
+      {tab === 'profile' && profile && (
+        <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 20 }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>👤 Datos personales</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Nombre</label>
+              <input
+                type="text"
+                value={profile.name}
+                onChange={(e) => setProfile((current) => (current ? { ...current, name: e.target.value } : current))}
+                style={{ padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)' }}
+              />
+              <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Email</label>
+              <input
+                type="email"
+                value={profile.email}
+                onChange={(e) => setProfile((current) => (current ? { ...current, email: e.target.value } : current))}
+                style={{ padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)' }}
+              />
+              <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Teléfono (opcional)</label>
+              <input
+                type="tel"
+                value={profile.phone ?? ''}
+                onChange={(e) => setProfile((current) => (current ? { ...current, phone: e.target.value || null } : current))}
+                placeholder="+34 600 000 000"
+                style={{ padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)' }}
+              />
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                Rol actual: <strong style={{ color: 'var(--text-primary)' }}>{storedUser?.role ?? profile.role}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 20 }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>🔒 Contraseña</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Contraseña actual</label>
+              <input
+                type="password"
+                value={profilePassword.current}
+                onChange={(e) => setProfilePassword((current) => ({ ...current, current: e.target.value }))}
+                style={{ padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)' }}
+              />
+              <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Nueva contraseña</label>
+              <input
+                type="password"
+                value={profilePassword.next}
+                onChange={(e) => setProfilePassword((current) => ({ ...current, next: e.target.value }))}
+                style={{ padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)' }}
+              />
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
+                Déjalo vacío si no quieres cambiar la contraseña.
+              </p>
+            </div>
+          </div>
+
+          <button type="submit" disabled={saving} style={{ padding: '10px 20px', background: 'var(--accent)', border: 'none', borderRadius: 6, color: '#fff', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+            {saving ? 'Guardando...' : 'Guardar perfil'}
+          </button>
+        </form>
+      )}
 
       {tab === 'keys' && (
         <div>

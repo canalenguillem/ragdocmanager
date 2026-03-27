@@ -27,6 +27,13 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   }
 }
 
+export async function requireAdmin(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  if (request.user.role !== 'admin') {
+    void reply.status(403).send({ error: 'Forbidden' });
+    return;
+  }
+}
+
 declare module 'fastify' {
   interface FastifyRequest {
     user: JwtPayload;

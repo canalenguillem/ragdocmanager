@@ -2,6 +2,7 @@ export interface User {
   id: number;
   email: string;
   name: string;
+  phone?: string | null;
   role: 'user' | 'admin';
 }
 
@@ -90,4 +91,10 @@ export interface QueryHistoryEntry {
   sources: Source[];
   document_ids?: number[];
   created_at: string;
+}
+
+export interface AdminUser extends User {
+  created_at: string;
+  document_count: number;
+  chat_count: number;
 }
