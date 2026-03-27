@@ -65,6 +65,7 @@ export interface QueryResponse {
   answer: string;
   sources: Source[];
   query_id: string;
+  conversation_id: string;
 }
 
 export interface JwtPayload {

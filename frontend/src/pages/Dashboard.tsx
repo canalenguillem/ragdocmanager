@@ -95,7 +95,7 @@ export function Dashboard() {
               document={document}
               onClick={() => {
                 if (document.status === 'ready') {
-                  navigate('/chat');
+                  navigate(`/chat?document_ids=${document.id}`);
                 }
               }}
               onDelete={async () => {

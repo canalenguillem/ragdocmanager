@@ -11,6 +11,7 @@ import { authRoutes } from './routes/auth';
 import { documentRoutes } from './routes/documents';
 import { queryRoutes } from './routes/query';
 import { settingsRoutes } from './routes/settings';
+import { folderRoutes } from './routes/folders';
 
 const fastify = Fastify({ logger: true });
 
@@ -35,6 +36,7 @@ async function main(): Promise<void> {
   await fastify.register(documentRoutes);
   await fastify.register(queryRoutes);
   await fastify.register(settingsRoutes);
+  await fastify.register(folderRoutes);
 
   await fastify.listen({ port: Number(config.PORT), host: '0.0.0.0' });
 }

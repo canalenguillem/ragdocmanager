@@ -47,6 +47,7 @@ export interface Document {
   error_msg: string | null;
   embedding_provider: string | null;
   embedding_model: string | null;
+  folder_id: number | null;
   created_at: string;
 }
 
@@ -65,4 +66,28 @@ export interface ChatMessage {
   content: string;
   sources?: Source[];
   created_at: Date;
+}
+
+export interface ConversationSummary {
+  _id: string;
+  conversation_id: string;
+  title: string;
+  question: string;
+  answer: string;
+  sources: Source[];
+  document_ids?: number[];
+  created_at: string;
+  message_count: number;
+}
+
+export interface QueryHistoryEntry {
+  _id: string;
+  query_id: string;
+  conversation_id?: string;
+  title?: string;
+  question: string;
+  answer: string;
+  sources: Source[];
+  document_ids?: number[];
+  created_at: string;
 }

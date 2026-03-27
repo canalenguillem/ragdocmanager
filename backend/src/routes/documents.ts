@@ -16,7 +16,7 @@ export async function documentRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/documents', async (request) => {
     const db = getDb();
     const [rows] = await db.query(
-      'SELECT id, original_name, file_size, page_count, status, error_msg, created_at, updated_at, embedding_provider, embedding_model FROM documents WHERE user_id = ? ORDER BY created_at DESC',
+      'SELECT id, original_name, file_size, page_count, status, error_msg, created_at, updated_at, embedding_provider, embedding_model, folder_id FROM documents WHERE user_id = ? ORDER BY created_at DESC',
       [request.user.userId]
     );
     return rows;

@@ -13,6 +13,7 @@ export async function initMongo(): Promise<void> {
   await db.collection('document_chunks').createIndex({ document_id: 1, user_id: 1 });
   await db.collection('document_chunks').createIndex({ qdrant_point_id: 1 }, { unique: true });
   await db.collection('query_history').createIndex({ user_id: 1, created_at: -1 });
+  await db.collection('query_history').createIndex({ user_id: 1, conversation_id: 1, created_at: -1 });
 
   console.log('[MongoDB] Connected');
 }
