@@ -6,6 +6,7 @@ import { ApiKey, UserSettings, AvailableModels, EmbeddingProvider } from '../typ
 type Tab = 'keys' | 'preferences';
 
 export function Settings() {
+  const visibleProviders: EmbeddingProvider[] = ['openai'];
   const [tab, setTab] = useState<Tab>('keys');
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [settings, setSettings] = useState<UserSettings | null>(null);
@@ -13,7 +14,7 @@ export function Settings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [newProvider, setNewProvider] = useState<EmbeddingProvider>('gemini');
+  const [newProvider, setNewProvider] = useState<EmbeddingProvider>('openai');
   const [newKeyType, setNewKeyType] = useState<'embedding' | 'chat' | 'both'>('both');
   const [newApiKey, setNewApiKey] = useState('');
   const [saving, setSaving] = useState(false);
@@ -199,10 +200,7 @@ export function Settings() {
           <form onSubmit={handleAddKey} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', gap: 12 }}>
               <select value={newProvider} onChange={(e) => setNewProvider(e.target.value as EmbeddingProvider)} style={{ flex: 1, padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)' }}>
-                <option value="gemini">Gemini (Google)</option>
                 <option value="openai">OpenAI</option>
-                <option value="cohere">Cohere</option>
-                <option value="mistral">Mistral</option>
               </select>
               <select value={newKeyType} onChange={(e) => setNewKeyType(e.target.value as 'embedding' | 'chat' | 'both')} style={{ flex: 1, padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)' }}>
                 <option value="both">Embeddings + Chat</option>
@@ -232,7 +230,7 @@ export function Settings() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Proveedor</label>
               <select value={settings.embedding_provider} onChange={(e) => void handleUpdateSettings('embedding_provider', e.target.value)} style={{ padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)' }}>
-                {Object.keys(availableModels).map((provider) => <option key={provider} value={provider}>{provider}</option>)}
+                {visibleProviders.map((provider) => <option key={provider} value={provider}>{provider}</option>)}
               </select>
               <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Modelo</label>
               <select value={settings.embedding_model} onChange={(e) => void handleUpdateSettings('embedding_model', e.target.value)} style={{ padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)' }}>
@@ -252,12 +250,11 @@ export function Settings() {
               <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Proveedor</label>
               <select value={settings.chat_provider} onChange={(e) => void handleUpdateSettings('chat_provider', e.target.value)} style={{ padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)' }}>
                 <option value="openai">OpenAI</option>
-                <option value="gemini">Gemini</option>
               </select>
               <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Modelo</label>
               <input type="text" value={settings.chat_model} onChange={(e) => void handleUpdateSettings('chat_model', e.target.value)} style={{ padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-primary)' }} />
               <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
-                Ejemplos: gpt-4o, gpt-4o-mini, gemini-2.0-flash, gemini-2.5-pro
+                Ejemplos: gpt-4o, gpt-4o-mini
               </p>
             </div>
           </div>
