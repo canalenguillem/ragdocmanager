@@ -123,14 +123,39 @@ export async function getUserSettings(userId: number): Promise<UserSettings> {
   const [rows] = await db.query('SELECT * FROM user_settings WHERE user_id = ?', [userId]);
   const result = rows as UserSettings[];
   if (result.length) {
-    return result[0];
+    const settings = result[0];
+    const providerModels = EMBEDDING_MODELS[settings.embedding_provider] ?? [];
+    const selectedModel = providerModels.find((model) => model.model === settings.embedding_model);
+
+    if (providerModels.length > 0 && !selectedModel) {
+      const fallbackModel = providerModels[0];
+      await db.query(
+        `UPDATE user_settings
+         SET embedding_model = ?, embedding_dimensions = ?
+         WHERE user_id = ?`,
+        [fallbackModel.model, fallbackModel.dimensions, userId]
+      );
+
+      return {
+        ...settings,
+        embedding_model: fallbackModel.model,
+        embedding_dimensions: fallbackModel.dimensions
+      };
+    }
+
+    return settings;
   }
 
-  await db.query('INSERT IGNORE INTO user_settings (user_id) VALUES (?)', [userId]);
+  await db.query(
+    `INSERT IGNORE INTO user_settings (
+      user_id, embedding_provider, embedding_model, chat_provider, chat_model, embedding_dimensions
+    ) VALUES (?, 'openai', 'text-embedding-3-large', 'openai', 'gpt-4o', 3072)`,
+    [userId]
+  );
   return {
     user_id: userId,
-    embedding_provider: 'gemini',
-    embedding_model: 'gemini-embedding-2-0',
+    embedding_provider: 'openai',
+    embedding_model: 'text-embedding-3-large',
     chat_provider: 'openai',
     chat_model: 'gpt-4o',
     embedding_dimensions: 3072

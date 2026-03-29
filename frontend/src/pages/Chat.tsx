@@ -1,6 +1,7 @@
 import React, { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FileText, FolderOpen, Folder, Plus, Trash2, ChevronRight, ChevronDown, Send, LayoutDashboard } from 'lucide-react';
+import { FileText, FolderOpen, Folder, Plus, Trash2, ChevronRight, ChevronDown, Send, LayoutDashboard, X } from 'lucide-react';
+import axios from 'axios';
 import { api } from '../api/client';
 import { ChatMessage, ConversationSummary, Document, QueryHistoryEntry, Source } from '../types';
 import { PdfViewer } from '../components/PdfViewer/PdfViewer';
@@ -101,6 +102,9 @@ export function Chat() {
   const [activeSource, setActiveSource] = useState<Source | null>(null);
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
   const [expandedFolders, setExpandedFolders] = useState<Record<number, boolean>>({});
+  const [contextExpanded, setContextExpanded] = useState(true);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<'context' | 'history' | null>(null);
   const [loading, setLoading] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [addingFolder, setAddingFolder] = useState(false);
@@ -108,6 +112,7 @@ export function Chat() {
   const [dragOver, setDragOver] = useState<number | 'unfiled' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const viewerPaneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void loadData();
@@ -123,6 +128,13 @@ export function Chat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (!activeSource) {
+      return;
+    }
+    viewerPaneRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeSource]);
 
   useEffect(() => {
     if (addingFolder) folderInputRef.current?.focus();
@@ -224,6 +236,24 @@ export function Chat() {
       setExpandedSources((cur) => ({ ...cur, [assistantMsg.id]: true }));
       if (data.sources.length) setActiveSource(data.sources[0]);
       void loadConversations(selectedDocs);
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? typeof error.response?.data?.error === 'string'
+          ? error.response.data.error
+          : error.response?.status === 400
+            ? 'La consulta es demasiado larga o no tiene el formato esperado.'
+            : 'No se pudo procesar la consulta.'
+        : 'No se pudo procesar la consulta.';
+
+      setMessages((cur) => [
+        ...cur,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: message,
+          created_at: new Date()
+        }
+      ]);
     } finally {
       setLoading(false);
     }
@@ -364,7 +394,7 @@ export function Chat() {
       </aside>
 
       {/* ── CENTER: PDF VIEWER ── */}
-      <div className="viewer-pane">
+      <div className="viewer-pane" ref={viewerPaneRef}>
         {activeSource ? (
           <>
             <div className="viewer-info">
@@ -409,60 +439,172 @@ export function Chat() {
           </div>
         </div>
 
+        <div className="chat-mobile-tools">
+          <button
+            type="button"
+            className={`chat-mobile-tool ${mobilePanel === 'context' ? 'active' : ''}`}
+            onClick={() => setMobilePanel((current) => current === 'context' ? null : 'context')}
+          >
+            Contexto
+            <span>{selectedDocs.length}</span>
+          </button>
+          <button
+            type="button"
+            className={`chat-mobile-tool ${mobilePanel === 'history' ? 'active' : ''}`}
+            onClick={() => setMobilePanel((current) => current === 'history' ? null : 'history')}
+          >
+            Historial
+            <span>{conversations.length}</span>
+          </button>
+        </div>
+
         <div className="chat-context-bar">
-          <div className="chat-context-copy">
-            <span className="chat-context-label">Contexto activo</span>
-            <div className="chat-context-docs">
-              {selectedDocNames.length > 0 ? (
-                <>
-                  {selectedDocNames.map((name) => (
-                    <span key={name} className="chat-doc-pill">{name}</span>
-                  ))}
-                  {hiddenDocCount > 0 && (
-                    <span className="chat-doc-pill muted">+{hiddenDocCount} más</span>
-                  )}
-                </>
-              ) : (
-                <span className="chat-doc-pill muted">Selecciona al menos un documento</span>
-              )}
-            </div>
+          <div className="chat-context-copy collapsible">
+            <button
+              type="button"
+              className="chat-section-toggle"
+              onClick={() => setContextExpanded((current) => !current)}
+            >
+              <span className="chat-context-label">Contexto activo</span>
+              <span className="chat-section-toggle-meta">
+                {selectedDocs.length} doc{selectedDocs.length !== 1 ? 's' : ''}
+                {contextExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              </span>
+            </button>
+            {contextExpanded && (
+              <div className="chat-context-docs">
+                {selectedDocNames.length > 0 ? (
+                  <>
+                    {selectedDocNames.map((name) => (
+                      <span key={name} className="chat-doc-pill">{name}</span>
+                    ))}
+                    {hiddenDocCount > 0 && (
+                      <span className="chat-doc-pill muted">+{hiddenDocCount} más</span>
+                    )}
+                  </>
+                ) : (
+                  <span className="chat-doc-pill muted">Selecciona al menos un documento</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {conversations.length > 0 && (
           <div className="conversation-strip">
-            <div className="conversation-strip-title">
-              Chats anteriores
-            </div>
-            <div className="conversation-list">
-              {conversations.map((conversation) => (
-                <div
-                  key={conversation.conversation_id}
-                  className={`conversation-card ${currentConversationId === conversation.conversation_id ? 'active' : ''}`}
-                >
-                  <div className="conversation-card-row">
-                    <button
-                      type="button"
-                      onClick={() => void openConversation(conversation.conversation_id)}
-                      className="conversation-open-btn"
-                    >
-                      <div className="conversation-title">
-                        {conversation.title}
-                      </div>
-                      <div className="conversation-meta">
-                        {conversation.message_count} turno{conversation.message_count !== 1 ? 's' : ''} · {new Date(conversation.created_at).toLocaleString()}
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-btn danger"
-                      onClick={() => void deleteConversation(conversation.conversation_id)}
-                    >
-                      <Trash2 size={12} />
-                    </button>
+            <button
+              type="button"
+              className="chat-section-toggle conversation-strip-toggle"
+              onClick={() => setHistoryExpanded((current) => !current)}
+            >
+              <span className="conversation-strip-title">Chats anteriores</span>
+              <span className="chat-section-toggle-meta">
+                {conversations.length}
+                {historyExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              </span>
+            </button>
+            {historyExpanded && (
+              <div className="conversation-list">
+                {conversations.map((conversation) => (
+                  <div
+                    key={conversation.conversation_id}
+                    className={`conversation-card ${currentConversationId === conversation.conversation_id ? 'active' : ''}`}
+                  >
+                    <div className="conversation-card-row">
+                      <button
+                        type="button"
+                        onClick={() => void openConversation(conversation.conversation_id)}
+                        className="conversation-open-btn"
+                      >
+                        <div className="conversation-title">
+                          {conversation.title}
+                        </div>
+                        <div className="conversation-meta">
+                          {conversation.message_count} turno{conversation.message_count !== 1 ? 's' : ''} · {new Date(conversation.created_at).toLocaleString()}
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        className="icon-btn danger"
+                        onClick={() => void deleteConversation(conversation.conversation_id)}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {mobilePanel && (
+          <div className="chat-mobile-drawer">
+            <div className="chat-mobile-drawer-backdrop" onClick={() => setMobilePanel(null)} />
+            <div className="chat-mobile-drawer-sheet">
+              <div className="chat-mobile-drawer-header">
+                <strong>{mobilePanel === 'context' ? 'Contexto activo' : 'Chats anteriores'}</strong>
+                <button type="button" className="icon-btn" onClick={() => setMobilePanel(null)}>
+                  <X size={16} />
+                </button>
+              </div>
+
+              {mobilePanel === 'context' ? (
+                <div className="chat-mobile-drawer-body">
+                  <div className="chat-context-copy mobile">
+                    <div className="chat-context-docs">
+                      {selectedDocNames.length > 0 ? (
+                        <>
+                          {selectedDocNames.map((name) => (
+                            <span key={name} className="chat-doc-pill">{name}</span>
+                          ))}
+                          {hiddenDocCount > 0 && (
+                            <span className="chat-doc-pill muted">+{hiddenDocCount} más</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="chat-doc-pill muted">Selecciona al menos un documento</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              ))}
+              ) : (
+                <div className="chat-mobile-drawer-body">
+                  <div className="conversation-list mobile">
+                    {conversations.map((conversation) => (
+                      <div
+                        key={conversation.conversation_id}
+                        className={`conversation-card ${currentConversationId === conversation.conversation_id ? 'active' : ''}`}
+                      >
+                        <div className="conversation-card-row">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void openConversation(conversation.conversation_id);
+                              setMobilePanel(null);
+                            }}
+                            className="conversation-open-btn"
+                          >
+                            <div className="conversation-title">
+                              {conversation.title}
+                            </div>
+                            <div className="conversation-meta">
+                              {conversation.message_count} turno{conversation.message_count !== 1 ? 's' : ''} · {new Date(conversation.created_at).toLocaleString()}
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            className="icon-btn danger"
+                            onClick={() => void deleteConversation(conversation.conversation_id)}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

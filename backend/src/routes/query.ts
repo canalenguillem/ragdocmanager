@@ -5,7 +5,7 @@ import { getMongo } from '../plugins/mongodb';
 import { runRagQuery } from '../services/rag.service';
 
 const querySchema = z.object({
-  question: z.string().min(3).max(1000),
+  question: z.string().min(3).max(8000),
   document_ids: z.array(z.number()).optional(),
   conversation_id: z.string().uuid().optional()
 });

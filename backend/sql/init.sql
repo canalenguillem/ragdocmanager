@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS user_api_keys (
 
 CREATE TABLE IF NOT EXISTS user_settings (
   user_id               INT PRIMARY KEY,
-  embedding_provider    ENUM('openai','gemini','cohere','mistral') DEFAULT 'gemini',
-  embedding_model       VARCHAR(100) DEFAULT 'gemini-embedding-2-0',
+  embedding_provider    ENUM('openai','gemini','cohere','mistral') DEFAULT 'openai',
+  embedding_model       VARCHAR(100) DEFAULT 'text-embedding-3-large',
   chat_provider         ENUM('openai','gemini') DEFAULT 'openai',
   chat_model            VARCHAR(100) DEFAULT 'gpt-4o',
   embedding_dimensions  INT DEFAULT 3072,

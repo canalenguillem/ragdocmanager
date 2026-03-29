@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { UploadCloud } from 'lucide-react';
+import axios from 'axios';
 import { api } from '../../api/client';
 
 export function UploadZone({ onUploaded }: { onUploaded: () => Promise<void> }) {
@@ -31,8 +32,17 @@ export function UploadZone({ onUploaded }: { onUploaded: () => Promise<void> }) 
         }
       });
       await onUploaded();
-    } catch {
-      setError('No se pudo subir el PDF');
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const apiMessage = typeof error.response?.data?.error === 'string' ? error.response.data.error : '';
+        if (error.response?.status === 413) {
+          setError(apiMessage || 'El PDF supera el límite máximo de 200 MB');
+        } else {
+          setError(apiMessage || 'No se pudo subir el PDF');
+        }
+      } else {
+        setError('No se pudo subir el PDF');
+      }
     } finally {
       setUploading(false);
     }
@@ -55,7 +65,7 @@ export function UploadZone({ onUploaded }: { onUploaded: () => Promise<void> }) 
           <UploadCloud size={28} />
         </div>
         <div className="upload-zone-title">Arrastra un PDF o haz clic para subirlo</div>
-        <div className="upload-zone-copy">Solo `application/pdf`, máximo 50 MB</div>
+        <div className="upload-zone-copy">Solo `application/pdf`, máximo 200 MB</div>
       </div>
       {uploading ? (
         <div style={{ marginTop: 12 }}>

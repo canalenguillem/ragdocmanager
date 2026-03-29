@@ -25,7 +25,7 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_CHAT_MODEL: z.string().default('gpt-4o'),
   API_KEY_ENCRYPTION_SECRET: z.string().min(64),
-  MAX_FILE_SIZE_MB: z.string().default('50'),
+  MAX_FILE_SIZE_MB: z.string().default('200'),
   UPLOADS_PATH: z.string().default('/app/uploads')
 });
 
