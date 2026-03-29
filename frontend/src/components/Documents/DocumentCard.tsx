@@ -27,23 +27,16 @@ export function DocumentCard({
   return (
     <div
       onClick={onClick}
-      style={{
-        width: '100%',
-        textAlign: 'left',
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 14,
-        padding: 18,
-        color: 'var(--text-primary)',
-        cursor: document.status === 'ready' ? 'pointer' : 'default'
-      }}
+      className={`document-card ${document.status === 'ready' ? 'is-ready' : ''}`}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <FileText size={18} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div className="document-card-icon">
+            <FileText size={18} />
+          </div>
           <div>
-            <div style={{ fontWeight: 600, marginBottom: 6 }}>{document.original_name}</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+            <div className="document-card-title">{document.original_name}</div>
+            <div className="document-card-meta">
               {formatBytes(document.file_size)} • {document.page_count} páginas
             </div>
           </div>
@@ -56,19 +49,9 @@ export function DocumentCard({
               e.stopPropagation();
               onDelete();
             }}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              padding: 4,
-              borderRadius: 4,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+            className="document-delete-btn"
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg-secondary)';
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
               e.currentTarget.style.color = 'var(--error)';
             }}
             onMouseLeave={(e) => {
@@ -80,21 +63,12 @@ export function DocumentCard({
           </button>
         </div>
       </div>
-      <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+      <div className="document-card-date">
         {new Date(document.created_at).toLocaleString()}
       </div>
       {document.status === 'ready' && document.embedding_provider ? (
-        <div style={{ marginTop: 12 }}>
-          <span
-            style={{
-              fontSize: 12,
-              color: 'var(--text-primary)',
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border)',
-              borderRadius: 999,
-              padding: '4px 10px'
-            }}
-          >
+        <div style={{ marginTop: 14 }}>
+          <span className="document-provider-chip">
             {document.embedding_provider}
           </span>
         </div>

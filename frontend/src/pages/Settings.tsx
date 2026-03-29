@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { ApiKey, UserSettings, AvailableModels, EmbeddingProvider, User } from '../types';
+import { SiteFooter } from '../components/Layout/SiteFooter';
 import { useAuthStore } from '../store/auth.store';
 
 type Tab = 'profile' | 'keys' | 'preferences';
@@ -151,7 +152,7 @@ export function Settings() {
   if (loading) return <div style={{ color: 'var(--text-secondary)', padding: 32 }}>Cargando...</div>;
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 16px', color: 'var(--text-primary)' }}>
+    <div className="page-panel" style={{ maxWidth: 700 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, margin: 0 }}>⚙ Ajustes</h1>
         <Link
@@ -360,6 +361,7 @@ export function Settings() {
           </div>
         </div>
       )}
+      <SiteFooter />
     </div>
   );
 }

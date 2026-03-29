@@ -261,6 +261,11 @@ export function Chat() {
     : documents;
   const docsInFolder = (folderId: number) => visibleDocuments.filter((d) => d.folder_id === folderId);
   const unfiledDocs = visibleDocuments.filter((d) => !d.folder_id);
+  const selectedDocNames = documents
+    .filter((document) => selectedDocs.includes(document.id))
+    .slice(0, 3)
+    .map((document) => document.original_name.replace(/\.[^.]+$/, ''));
+  const hiddenDocCount = Math.max(0, selectedDocs.length - selectedDocNames.length);
 
   function DocItem({ doc }: { doc: Document }) {
     return (
@@ -386,8 +391,14 @@ export function Chat() {
       {/* ── RIGHT: CHAT ── */}
       <main className="chat-main">
         <div className="chat-header">
-          <span>Chat</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="chat-header-copy">
+            <span className="chat-kicker">Workspace</span>
+            <div className="chat-title-row">
+              <span>Chat</span>
+              <span className="chat-header-meta">{selectedDocs.length} doc{selectedDocs.length !== 1 ? 's' : ''}</span>
+            </div>
+          </div>
+          <div className="chat-header-actions">
             <button
               type="button"
               className="sources-toggle"
@@ -395,44 +406,50 @@ export function Chat() {
             >
               Nuevo chat
             </button>
-            <span className="chat-header-meta">{selectedDocs.length} doc{selectedDocs.length !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
+
+        <div className="chat-context-bar">
+          <div className="chat-context-copy">
+            <span className="chat-context-label">Contexto activo</span>
+            <div className="chat-context-docs">
+              {selectedDocNames.length > 0 ? (
+                <>
+                  {selectedDocNames.map((name) => (
+                    <span key={name} className="chat-doc-pill">{name}</span>
+                  ))}
+                  {hiddenDocCount > 0 && (
+                    <span className="chat-doc-pill muted">+{hiddenDocCount} más</span>
+                  )}
+                </>
+              ) : (
+                <span className="chat-doc-pill muted">Selecciona al menos un documento</span>
+              )}
+            </div>
           </div>
         </div>
 
         {conversations.length > 0 && (
-          <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.08, color: 'var(--text-secondary)', marginBottom: 10 }}>
+          <div className="conversation-strip">
+            <div className="conversation-strip-title">
               Chats anteriores
             </div>
-            <div style={{ display: 'grid', gap: 8, maxHeight: 160, overflowY: 'auto' }}>
+            <div className="conversation-list">
               {conversations.map((conversation) => (
                 <div
                   key={conversation.conversation_id}
-                  style={{
-                    background: currentConversationId === conversation.conversation_id ? 'var(--bg-secondary)' : 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 10,
-                    padding: '10px 12px'
-                  }}
+                  className={`conversation-card ${currentConversationId === conversation.conversation_id ? 'active' : ''}`}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+                  <div className="conversation-card-row">
                     <button
                       type="button"
                       onClick={() => void openConversation(conversation.conversation_id)}
-                      style={{
-                        textAlign: 'left',
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--text-primary)',
-                        cursor: 'pointer',
-                        padding: 0,
-                        flex: 1
-                      }}
+                      className="conversation-open-btn"
                     >
-                      <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                      <div className="conversation-title">
                         {conversation.title}
                       </div>
-                      <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
+                      <div className="conversation-meta">
                         {conversation.message_count} turno{conversation.message_count !== 1 ? 's' : ''} · {new Date(conversation.created_at).toLocaleString()}
                       </div>
                     </button>
@@ -452,10 +469,18 @@ export function Chat() {
 
         <div className="messages">
           {messages.length === 0 && (
-            <div className="messages-empty">Haz una pregunta sobre tus documentos</div>
+            <div className="messages-empty">
+              <span className="messages-empty-kicker">Consulta guiada</span>
+              <strong>Haz una pregunta sobre tus documentos</strong>
+              <p>El asistente responderá usando solo los archivos que tengas seleccionados y te dejará saltar a las fuentes exactas.</p>
+            </div>
           )}
           {messages.map((msg) => (
             <div key={msg.id} className={`message ${msg.role}`}>
+              <div className="message-meta">
+                <span>{msg.role === 'assistant' ? 'Asistente' : 'Tú'}</span>
+                <span>{msg.created_at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
               <div className="markdown-content">
                 {msg.role === 'assistant' ? renderMarkdown(msg.content) : msg.content}
               </div>

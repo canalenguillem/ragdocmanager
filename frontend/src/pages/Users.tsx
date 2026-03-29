@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { SiteFooter } from '../components/Layout/SiteFooter';
 import { AdminUser } from '../types';
 
 export function Users() {
@@ -66,7 +67,7 @@ export function Users() {
   }
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 16px', color: 'var(--text-primary)' }}>
+    <div className="page-panel" style={{ maxWidth: 1200 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 28, margin: 0 }}>Usuarios</h1>
@@ -174,6 +175,7 @@ export function Users() {
           ))}
         </div>
       )}
+      <SiteFooter />
     </div>
   );
 }

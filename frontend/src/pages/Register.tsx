@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { SiteFooter } from '../components/Layout/SiteFooter';
 import { useAuthStore } from '../store/auth.store';
 
 const PHONE_CODES = [
@@ -42,7 +43,11 @@ export function Register() {
   return (
     <div className="auth-shell">
       <form className="auth-card" onSubmit={handleSubmit}>
+        <span className="auth-eyebrow">Tramuntana RAG</span>
         <h1>Crear cuenta</h1>
+        <p className="auth-subtitle">
+          Empieza con un espacio limpio para organizar documentos, guardar conversaciones y compartir conocimiento interno.
+        </p>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" required />
         <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" required />
         <div style={{ display: 'flex', gap: 10 }}>
@@ -77,6 +82,7 @@ export function Register() {
           ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
         </p>
       </form>
+      <SiteFooter />
     </div>
   );
 }

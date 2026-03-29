@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import { Document } from '../types';
 import { UploadZone } from '../components/Documents/UploadZone';
 import { DocumentCard } from '../components/Documents/DocumentCard';
+import { SiteFooter } from '../components/Layout/SiteFooter';
 import { useAuthStore } from '../store/auth.store';
 
 interface SettingsResponse {
@@ -18,6 +19,8 @@ export function Dashboard() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [hasVerifiedKey, setHasVerifiedKey] = useState(true);
   const [loading, setLoading] = useState(true);
+  const readyCount = documents.filter((document) => document.status === 'ready').length;
+  const processingCount = documents.filter((document) => ['pending', 'processing'].includes(document.status)).length;
 
   const loadDocuments = async () => {
     const { data } = await api.get<Document[]>('/documents');
@@ -87,6 +90,30 @@ export function Dashboard() {
         </div>
       ) : null}
 
+      <section className="dashboard-hero">
+        <div>
+          <span className="auth-eyebrow">Workspace documental</span>
+          <h2>Organiza manuales, boletines y normas en un solo lugar</h2>
+          <p>
+            Sube PDFs, ordénalos por carpetas y entra a conversar con cada documento con trazabilidad por fuente.
+          </p>
+        </div>
+        <div className="dashboard-stats">
+          <div className="dashboard-stat">
+            <strong>{documents.length}</strong>
+            <span>documentos</span>
+          </div>
+          <div className="dashboard-stat">
+            <strong>{readyCount}</strong>
+            <span>listos</span>
+          </div>
+          <div className="dashboard-stat">
+            <strong>{processingCount}</strong>
+            <span>procesando</span>
+          </div>
+        </div>
+      </section>
+
       <section style={{ marginBottom: 24 }}>
         <UploadZone onUploaded={loadDocuments} />
       </section>
@@ -94,24 +121,33 @@ export function Dashboard() {
       {loading ? (
         <div style={{ color: 'var(--text-secondary)' }}>Cargando...</div>
       ) : (
-        <div className="documents-grid">
-          {documents.map((document) => (
-            <DocumentCard
-              key={document.id}
-              document={document}
-              onClick={() => {
-                if (document.status === 'ready') {
-                  navigate(`/chat?document_ids=${document.id}`);
-                }
-              }}
-              onDelete={async () => {
-                await api.delete(`/documents/${document.id}`);
-                await loadDocuments();
-              }}
-            />
-          ))}
-        </div>
+        <>
+          <div className="dashboard-section-head">
+            <div>
+              <h3>Biblioteca</h3>
+              <p>Pulsa cualquier documento listo para entrar directamente al chat contextual.</p>
+            </div>
+          </div>
+          <div className="documents-grid">
+            {documents.map((document) => (
+              <DocumentCard
+                key={document.id}
+                document={document}
+                onClick={() => {
+                  if (document.status === 'ready') {
+                    navigate(`/chat?document_ids=${document.id}`);
+                  }
+                }}
+                onDelete={async () => {
+                  await api.delete(`/documents/${document.id}`);
+                  await loadDocuments();
+                }}
+              />
+            ))}
+          </div>
+        </>
       )}
+      <SiteFooter />
     </div>
   );
 }

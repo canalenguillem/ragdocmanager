@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { SiteFooter } from '../components/Layout/SiteFooter';
 import { useAuthStore } from '../store/auth.store';
 
 export function Login() {
@@ -27,7 +28,11 @@ export function Login() {
   return (
     <div className="auth-shell">
       <form className="auth-card" onSubmit={handleSubmit}>
+        <span className="auth-eyebrow">Tramuntana RAG</span>
         <h1>Iniciar sesión</h1>
+        <p className="auth-subtitle">
+          Accede a tu espacio documental para consultar, conversar y recuperar respuestas con fuentes trazables.
+        </p>
         <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" required />
         <input
           value={password}
@@ -44,6 +49,7 @@ export function Login() {
           ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
         </p>
       </form>
+      <SiteFooter />
     </div>
   );
 }

@@ -45,32 +45,27 @@ export function UploadZone({ onUploaded }: { onUploaded: () => Promise<void> }) 
   });
 
   return (
-    <div>
+    <div className="upload-zone-wrap">
       <div
         {...getRootProps()}
-        style={{
-          border: `2px dashed ${isDragActive ? 'var(--accent)' : 'var(--border)'}`,
-          borderRadius: 18,
-          padding: '28px 20px',
-          background: 'var(--bg-card)',
-          textAlign: 'center',
-          cursor: 'pointer'
-        }}
+        className={`upload-zone ${isDragActive ? 'drag-active' : ''}`}
       >
         <input {...getInputProps()} />
-        <UploadCloud size={28} style={{ marginBottom: 12 }} />
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>Arrastra un PDF o haz clic para subirlo</div>
-        <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Solo `application/pdf`, máximo 50 MB</div>
+        <div className="upload-zone-icon">
+          <UploadCloud size={28} />
+        </div>
+        <div className="upload-zone-title">Arrastra un PDF o haz clic para subirlo</div>
+        <div className="upload-zone-copy">Solo `application/pdf`, máximo 50 MB</div>
       </div>
       {uploading ? (
         <div style={{ marginTop: 12 }}>
-          <div style={{ height: 10, background: 'var(--bg-secondary)', borderRadius: 999 }}>
+          <div style={{ height: 10, background: 'var(--bg-secondary)', borderRadius: 999, overflow: 'hidden' }}>
             <div
               style={{
                 width: `${progress}%`,
                 height: '100%',
                 borderRadius: 999,
-                background: 'var(--accent)'
+                background: 'linear-gradient(90deg, var(--accent), #60a5fa)'
               }}
             />
           </div>
