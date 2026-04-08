@@ -21,3 +21,4 @@ vite.config.js
 # Editor
 .vscode/
 .idea/
+.codex

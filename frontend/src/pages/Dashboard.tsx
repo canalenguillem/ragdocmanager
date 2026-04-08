@@ -30,13 +30,26 @@ export function Dashboard() {
   useEffect(() => {
     void (async () => {
       setLoading(true);
-      const [{ data: docs }, { data: settings }] = await Promise.all([
-        api.get<Document[]>('/documents'),
-        api.get<SettingsResponse>('/settings')
-      ]);
-      setDocuments(docs);
-      setHasVerifiedKey(settings.api_keys.some((key) => Boolean(key.verified_at)));
-      setLoading(false);
+      try {
+        const [docsResult, settingsResult] = await Promise.allSettled([
+          api.get<Document[]>('/documents'),
+          api.get<SettingsResponse>('/settings')
+        ]);
+
+        if (docsResult.status === 'fulfilled') {
+          setDocuments(docsResult.value.data);
+        } else {
+          console.error('Failed to load documents', docsResult.reason);
+        }
+
+        if (settingsResult.status === 'fulfilled') {
+          setHasVerifiedKey(settingsResult.value.data.api_keys.some((key) => Boolean(key.verified_at)));
+        } else {
+          console.error('Failed to load settings', settingsResult.reason);
+        }
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 

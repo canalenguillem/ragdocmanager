@@ -26,6 +26,17 @@ export async function initDb(): Promise<void> {
   await db.query('SELECT 1');
   await db.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30) NULL AFTER name');
   await db.query(
+    `CREATE TABLE IF NOT EXISTS document_folders (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_folder_name_per_user (user_id, name),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
+  );
+  await db.query('ALTER TABLE documents ADD COLUMN IF NOT EXISTS folder_id INT NULL AFTER user_id');
+  await db.query(
     "ALTER TABLE user_settings ALTER COLUMN embedding_provider SET DEFAULT 'openai'"
   );
   await db.query(

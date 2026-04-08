@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
 CREATE TABLE IF NOT EXISTS documents (
   id                INT AUTO_INCREMENT PRIMARY KEY,
   user_id           INT NOT NULL,
+  folder_id         INT NULL,
   filename          VARCHAR(500) NOT NULL,
   original_name     VARCHAR(500) NOT NULL,
   file_size         BIGINT NOT NULL,
@@ -47,5 +48,14 @@ CREATE TABLE IF NOT EXISTS documents (
   embedding_model   VARCHAR(100) DEFAULT NULL,
   created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS document_folders (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  user_id     INT NOT NULL,
+  name        VARCHAR(255) NOT NULL,
+  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_folder_name_per_user (user_id, name),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
